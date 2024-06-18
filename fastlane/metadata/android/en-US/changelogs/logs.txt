@@ -1,0 +1,6 @@
+-> V1.0(1)
+-Material Design 3 (You)
+-Dark and light theme
+-Gemini-pro model
+-Gemini-pro-vision model
+-Written in Jetpack Compose
