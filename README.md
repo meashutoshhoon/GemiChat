@@ -6,8 +6,8 @@
 
 <!-- ---------- Badges ---------- -->
   <div align="center">
-    <img alt="Last commit" src="https://img.shields.io/github/last-commit/Jaano-Bharat/GemiChat?color=c3e7ff&style=flat-square">
-    <img alt="Stars" src="https://img.shields.io/github/stars/Jaano-Bharat/GemiChat?color=c3e7ff&style=flat-square">
+    <img alt="Last commit" src="https://img.shields.io/github/last-commit/meashutoshhoon/GemiChat?color=c3e7ff&style=flat-square">
+    <img alt="Stars" src="https://img.shields.io/github/stars/meashutoshhoon/GemiChat?color=c3e7ff&style=flat-square">
     <br>
 </div>
 </div>
@@ -44,7 +44,7 @@ To build the app, you must use Gradle. Its highly recommended to use Android Stu
 Experience. Also, update the Gradle version to match the one supported by your version of Android Studio.
 
 Enter your API key in [MainViewModel
-](https://github.com/Jaano-Bharat/GemiChat/blob/master/app/src/main/java/com/afi/gemichat/MainViewModel.kt)
+](https://github.com/meashutoshhoon/GemiChat/blob/master/app/src/main/java/com/afi/gemichat/MainViewModel.kt)
 
 ## Credits
 
