@@ -5,6 +5,7 @@ import android.graphics.ImageDecoder
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -73,9 +74,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.afi.gemichat.App.Companion.applicationScope
 import com.afi.gemichat.ui.enums.ThemeMode
 import com.afi.gemichat.ui.model.ThemeModel
@@ -90,18 +94,11 @@ class MainActivity : ComponentActivity() {
         ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class
     )
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-
-//        WindowCompat.setDecorFitsSystemWindows(window, false)
-//        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { v, insets ->
-//            v.setPadding(0, 0, 0, 0)
-//            insets
-//        }
-
-        val mainViewModel by viewModels<MainViewModel>()
-
         enableEdgeToEdge()
 
+        val mainViewModel by viewModels<MainViewModel>()
         val themeModel: ThemeModel by viewModels()
 
         setContent {
@@ -114,26 +111,12 @@ class MainActivity : ComponentActivity() {
             ) {
 
                 val isDarkTheme = themeModel.themeMode == ThemeMode.DARK
+                val view = LocalView.current
 
                 val themeShifter = {
-                    if (isDarkTheme) {
-                        applicationScope.launch(Dispatchers.IO) {
-                            themeModel.themeMode = ThemeMode.entries.toTypedArray()[1]
-                            Preferences.edit {
-                                putString(
-                                    Preferences.themeModeKey, ThemeMode.entries[1].name
-                                )
-                            }
-                        }
-                    } else {
-                        applicationScope.launch(Dispatchers.IO) {
-                            themeModel.themeMode = ThemeMode.entries.toTypedArray()[2]
-                            Preferences.edit {
-                                putString(
-                                    Preferences.themeModeKey, ThemeMode.entries[2].name
-                                )
-                            }
-                        }
+                    applicationScope.launch(Dispatchers.IO) {
+                        val newThemeMode = if (isDarkTheme) ThemeMode.LIGHT else ThemeMode.DARK
+                        themeModel.updateThemeMode(newThemeMode)
                     }
                 }
 
@@ -179,11 +162,16 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Scaffold(topBar = {
-                        CenterAlignedTopAppBar(title = { Text(text = "GemiChat") }, actions = {
-                            IconButton(onClick = { themeShifter() }) {
+                        CenterAlignedTopAppBar(title = { Text(text = stringResource(R.string.app_name)) }, actions = {
+                            IconButton(
+                                onClick = {
+                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                    themeShifter()
+                                }
+                            ) {
                                 Icon(
                                     imageVector = if (isDarkTheme) Icons.Rounded.DarkMode else Icons.Rounded.LightMode,
-                                    contentDescription = "Theme Change"
+                                    contentDescription = stringResource(R.string.theme_change)
                                 )
                             }
                         })
@@ -262,7 +250,7 @@ class MainActivity : ComponentActivity() {
                                                 ) {
                                                     if (promptText.isEmpty()) {
                                                         Text(
-                                                            text = "Message",
+                                                            text = stringResource(R.string.message),
                                                             fontSize = 18.sp,
                                                         )
                                                     }
@@ -278,6 +266,7 @@ class MainActivity : ComponentActivity() {
 
                                     IconButton(
                                         onClick = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                                             if (promptText.isNotBlank() && isGenerating.not()) {
                                                 mainViewModel.sendText(promptText, imageBitmaps)
                                                 promptText = ""
