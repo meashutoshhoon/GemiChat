@@ -17,8 +17,9 @@ import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,6 +78,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -84,15 +86,12 @@ import com.afi.gemichat.App.Companion.applicationScope
 import com.afi.gemichat.ui.enums.ThemeMode
 import com.afi.gemichat.ui.model.ThemeModel
 import com.afi.gemichat.ui.theme.GemiChatTheme
-import com.afi.gemichat.ui.util.Preferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    @OptIn(
-        ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class
-    )
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -161,151 +160,167 @@ class MainActivity : ComponentActivity() {
                         .imePadding(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Scaffold(topBar = {
-                        CenterAlignedTopAppBar(title = { Text(text = stringResource(R.string.app_name)) }, actions = {
-                            IconButton(
-                                onClick = {
-                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                                    themeShifter()
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = if (isDarkTheme) Icons.Rounded.DarkMode else Icons.Rounded.LightMode,
-                                    contentDescription = stringResource(R.string.theme_change)
-                                )
-                            }
-                        })
-                    }, bottomBar = {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
-                                .wrapContentHeight()
-                        ) {
-                            LazyRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                items(imageBitmaps.size) { index ->
-                                    val imageBitmap = imageBitmaps[index]
-                                    Image(bitmap = imageBitmap.asImageBitmap(),
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .height(100.dp)
-                                            .animateItemPlacement()
-                                            .border(
-                                                width = 2.dp,
-                                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                            )
-                                            .clickable {
-                                                imageBitmaps.remove(imageBitmap)
-                                            })
-                                }
-                            }
-
-                            ElevatedCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight(),
-                                shape = RoundedCornerShape(180.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 5.dp, horizontal = 12.dp)
-                                        .wrapContentHeight(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    BasicTextField(
-                                        value = promptText,
-                                        onValueChange = { promptText = it },
-                                        textStyle = TextStyle(
-                                            fontSize = 18.sp,
-                                            color = MaterialTheme.colorScheme.onBackground
-                                        ),
-                                        decorationBox = { innerTextField ->
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-
-                                                IconButton(onClick = {
-                                                    photoPicker.launch(
-                                                        PickVisualMediaRequest(PickVisualMedia.ImageOnly)
-                                                    )
-                                                }) {
-                                                    Icon(
-                                                        imageVector = Icons.Rounded.Add,
-                                                        contentDescription = null
-                                                    )
-                                                }
-
-                                                Spacer(modifier = Modifier.width(width = 8.dp))
-
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .wrapContentHeight()
-                                                ) {
-                                                    if (promptText.isEmpty()) {
-                                                        Text(
-                                                            text = stringResource(R.string.message),
-                                                            fontSize = 18.sp,
-                                                        )
-                                                    }
-                                                    innerTextField()
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .navigationBarsPadding()
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-
+                    Scaffold(
+                        topBar = {
+                            CenterAlignedTopAppBar(
+                                title = { Text(text = stringResource(R.string.app_name)) },
+                                actions = {
                                     IconButton(
                                         onClick = {
                                             view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                                            if (promptText.isNotBlank() && isGenerating.not()) {
-                                                mainViewModel.sendText(promptText, imageBitmaps)
-                                                promptText = ""
-                                                imageBitmaps.clear()
-                                                keyboardController?.hide()
-                                            } else if (promptText.isBlank()) {
-                                                Toast.makeText(
-                                                    context,
-                                                    "Please enter a message",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        }, modifier = Modifier
+                                            themeShifter()
+                                        }
                                     ) {
-                                        AnimatedContent(
-                                            targetState = isGenerating, label = ""
-                                        ) { generating ->
-                                            if (generating) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(
-                                                        20.dp
-                                                    ), strokeWidth = 3.dp
+                                        Icon(
+                                            imageVector = if (isDarkTheme) Icons.Rounded.DarkMode else Icons.Rounded.LightMode,
+                                            contentDescription = stringResource(R.string.theme_change)
+                                        )
+                                    }
+                                },
+                            )
+                        },
+                        bottomBar = {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
+                                    .wrapContentHeight()
+                            ) {
+                                LazyRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = PaddingValues(horizontal = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(imageBitmaps.size) { index ->
+                                        val imageBitmap = imageBitmaps[index]
+                                        Modifier.height(100.dp)
+                                        Image(bitmap = imageBitmap.asImageBitmap(),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .animateItem(
+                                                    fadeInSpec = null,
+                                                    fadeOutSpec = null,
+                                                    placementSpec = spring(
+                                                        stiffness = Spring.StiffnessMediumLow,
+                                                        visibilityThreshold = IntOffset.VisibilityThreshold,
+                                                    )
                                                 )
-                                            } else {
-                                                Icon(
-                                                    imageVector = Icons.AutoMirrored.Rounded.Send,
-                                                    contentDescription = null
+                                                .border(
+                                                    width = 2.dp,
+                                                    color = MaterialTheme.colorScheme.surfaceVariant,
                                                 )
+                                                .clickable {
+                                                    imageBitmaps.remove(imageBitmap)
+                                                }
+                                        )
+                                    }
+                                }
+
+                                ElevatedCard(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight(),
+                                    shape = RoundedCornerShape(180.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 5.dp, horizontal = 12.dp)
+                                            .wrapContentHeight(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        BasicTextField(
+                                            value = promptText,
+                                            onValueChange = { promptText = it },
+                                            textStyle = TextStyle(
+                                                fontSize = 18.sp,
+                                                color = MaterialTheme.colorScheme.onBackground
+                                            ),
+                                            decorationBox = { innerTextField ->
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+
+                                                    IconButton(onClick = {
+                                                        photoPicker.launch(
+                                                            PickVisualMediaRequest(PickVisualMedia.ImageOnly)
+                                                        )
+                                                    }) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.Add,
+                                                            contentDescription = null
+                                                        )
+                                                    }
+
+                                                    Spacer(modifier = Modifier.width(width = 8.dp))
+
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .wrapContentHeight()
+                                                    ) {
+                                                        if (promptText.isEmpty()) {
+                                                            Text(
+                                                                text = stringResource(R.string.message),
+                                                                fontSize = 18.sp,
+                                                            )
+                                                        }
+                                                        innerTextField()
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .navigationBarsPadding()
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        IconButton(
+                                            onClick = {
+                                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                                if (promptText.isNotBlank() && isGenerating.not()) {
+                                                    mainViewModel.sendText(promptText, imageBitmaps)
+                                                    promptText = ""
+                                                    imageBitmaps.clear()
+                                                    keyboardController?.hide()
+                                                } else if (promptText.isBlank()) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Please enter a message",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            },
+                                            modifier = Modifier,
+                                        ) {
+                                            AnimatedContent(
+                                                targetState = isGenerating,
+                                                label = "",
+                                            ) { generating ->
+                                                if (generating) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(
+                                                            20.dp
+                                                        ), strokeWidth = 3.dp
+                                                    )
+                                                } else {
+                                                    Icon(
+                                                        imageVector = Icons.AutoMirrored.Rounded.Send,
+                                                        contentDescription = null,
+                                                    )
+                                                }
                                             }
                                         }
                                     }
                                 }
+
+
                             }
-
-
-                        }
-                    }) {
+                        }) {
                         ConversationScreen(
-                            conversations = conversations, modifier = Modifier.padding(it)
+                            conversations = conversations,
+                            modifier = Modifier.padding(it),
                         )
                     }
                 }
@@ -314,7 +329,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ConversationScreen(
     conversations: SnapshotStateList<Triple<String, String, List<Bitmap>?>>,
@@ -326,19 +340,26 @@ fun ConversationScreen(
         state = lazyListState,
         modifier = modifier,
         contentPadding = PaddingValues(vertical = 24.dp, horizontal = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(conversations.size) { index ->
             val conversation = conversations[index]
             val isInComingBoolean = conversation.first == "received"
 
+            Modifier
+                .fillMaxWidth()
             MessageItem(
                 isInComing = isInComingBoolean,
                 images = conversation.third ?: emptyList(),
                 content = conversation.second,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateItemPlacement()
+                modifier = Modifier.animateItem(
+                    fadeInSpec = null,
+                    fadeOutSpec = null,
+                    placementSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow,
+                        visibilityThreshold = IntOffset.VisibilityThreshold,
+                    )
+                )
             )
         }
     }
@@ -347,7 +368,10 @@ fun ConversationScreen(
 
 @Composable
 fun MessageItem(
-    isInComing: Boolean, images: List<Bitmap>, content: String, modifier: Modifier = Modifier
+    isInComing: Boolean,
+    images: List<Bitmap>,
+    content: String,
+    modifier: Modifier = Modifier,
 ) {
 
     val cardShape by remember {
@@ -371,7 +395,8 @@ fun MessageItem(
     val horizontalAlignment = if (isInComing) Alignment.Start else Alignment.End
 
     Column(
-        modifier = modifier, horizontalAlignment = horizontalAlignment
+        modifier = modifier,
+        horizontalAlignment = horizontalAlignment,
     ) {
         if (images.isNotEmpty()) {
             LazyRow(
@@ -410,12 +435,14 @@ fun MessageItem(
                 }
             )
         ) {
-            Row(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+            ) {
                 Text(
                     text = content,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.animateContentSize(
-                        animationSpec = spring()
+                        animationSpec = spring(),
                     )
                 )
             }

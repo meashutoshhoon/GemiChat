@@ -16,11 +16,17 @@ class MainViewModel : ViewModel() {
     private val apiKey = "YOUR API KEY"
 
     private val geminiProModel by lazy {
-        GenerativeModel(modelName = "gemini-pro", apiKey = apiKey).apply { startChat() }
+        GenerativeModel(
+            modelName = "gemini-pro",
+            apiKey = apiKey
+        ).apply { startChat() }
     }
 
     private val geminiProVisionModel by lazy {
-        GenerativeModel(modelName = "gemini-pro-vision", apiKey = apiKey).apply { startChat() }
+        GenerativeModel(
+            modelName = "gemini-pro-vision",
+            apiKey = apiKey
+        ).apply { startChat() }
     }
 
     val isGenerating = mutableStateOf(false)

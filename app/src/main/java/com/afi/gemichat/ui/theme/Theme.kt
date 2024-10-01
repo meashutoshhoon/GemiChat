@@ -32,7 +32,6 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun GemiChatTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -42,10 +41,14 @@ fun GemiChatTheme(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (darkTheme) {
                 view.windowInsetsController?.setSystemBarsAppearance(
-                    0, APPEARANCE_LIGHT_STATUS_BARS)
+                    0,
+                    APPEARANCE_LIGHT_STATUS_BARS,
+                )
             } else {
                 view.windowInsetsController?.setSystemBarsAppearance(
-                    APPEARANCE_LIGHT_STATUS_BARS, APPEARANCE_LIGHT_STATUS_BARS)
+                    APPEARANCE_LIGHT_STATUS_BARS,
+                    APPEARANCE_LIGHT_STATUS_BARS,
+                )
             }
         }
     }
@@ -59,13 +62,17 @@ fun GemiChatTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+
     ProvideTextStyle(
-        value =
-        LocalTextStyle.current.copy(
-            lineBreak = LineBreak.Paragraph, textDirection = TextDirection.Content)) {
+        value = LocalTextStyle.current.copy(
+            lineBreak = LineBreak.Paragraph,
+            textDirection = TextDirection.Content,
+        ),
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,
-            content = content)
+            content = content,
+        )
     }
 }
