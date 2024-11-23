@@ -9,6 +9,8 @@ plugins {
 
 val keystorePropertiesFile: File = rootProject.file("keystore.properties")
 
+val baseVersionName = currentVersion.name
+
 android {
     compileSdk = 35
 
@@ -31,9 +33,9 @@ android {
         applicationId = "com.afi.gemichat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
+        versionCode = 4
 
-        versionName = rootProject.extra["versionName"] as String
+        versionName = baseVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
