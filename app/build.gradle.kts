@@ -33,7 +33,7 @@ android {
         applicationId = "com.afi.gemichat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
+        versionCode = 5
 
         versionName = baseVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

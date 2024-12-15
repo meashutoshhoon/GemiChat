@@ -9,7 +9,7 @@ import com.afi.gemichat.ui.util.Preferences
 import com.afi.gemichat.ui.util.THEME_MODE
 
 class ThemeModel : ViewModel() {
-    var themeMode by mutableStateOf(ThemeMode.getCurrent())
+    var themeMode by mutableStateOf(ThemeMode.current)
         private set
 
     fun updateThemeMode(newMode: ThemeMode) {
